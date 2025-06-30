@@ -663,7 +663,9 @@ def onConnected(interface):
                         except UnicodeDecodeError:
                             meshtastic.util.our_exit("ERROR: Config file is not valid UTF-8 or UTF-16 encoded.")
 
+                    print("Decoded text:\n", text)
                     configuration = yaml.safe_load(text)
+                    print("Parsed config:\n", configuration)
                 except Exception as e:
                     meshtastic.util.our_exit(f"ERROR: Failed to load config file: {e}")
 
