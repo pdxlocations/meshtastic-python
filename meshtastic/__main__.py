@@ -650,11 +650,24 @@ def onConnected(interface):
                 printConfig(node.localConfig)
                 printConfig(node.moduleConfig)
 
-        if args.configure:
-            with open(args.configure[0], encoding="utf8") as file:
-                configuration = yaml.safe_load(file)
-                closeNow = True
+            if args.configure:
+                try:
+                    with open(args.configure[0], "rb") as raw_file:
+                        raw = raw_file.read()
 
+                    try:
+                        text = raw.decode("utf-8")
+                    except UnicodeDecodeError:
+                        try:
+                            text = raw.decode("utf-16")
+                        except UnicodeDecodeError:
+                            meshtastic.util.our_exit("ERROR: Config file is not valid UTF-8 or UTF-16 encoded.")
+
+                    configuration = yaml.safe_load(text)
+                except Exception as e:
+                    meshtastic.util.our_exit(f"ERROR: Failed to load config file: {e}")
+
+                closeNow = True
                 interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
 
                 if "owner" in configuration:
