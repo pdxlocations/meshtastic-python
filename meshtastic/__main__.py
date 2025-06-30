@@ -656,18 +656,25 @@ def onConnected(interface):
                         raw = raw_file.read()
 
                     try:
-                        text = raw.decode("utf-8")
+                        text = raw.decode("utf-8-sig")
                     except UnicodeDecodeError:
                         try:
                             text = raw.decode("utf-16")
                         except UnicodeDecodeError:
                             meshtastic.util.our_exit("ERROR: Config file is not valid UTF-8 or UTF-16 encoded.")
 
-                    print("Decoded text:\n", text)
+                    print("Decoded text:\n", text)  # DEBUG
                     configuration = yaml.safe_load(text)
-                    print("Parsed config:\n", configuration)
+                    print("Parsed config:\n", configuration)  # DEBUG
+
                 except Exception as e:
                     meshtastic.util.our_exit(f"ERROR: Failed to load config file: {e}")
+
+                if not configuration:
+                    meshtastic.util.our_exit("ERROR: Configuration file is empty or malformed.")
+
+                closeNow = True
+                interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
 
                 closeNow = True
                 interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
