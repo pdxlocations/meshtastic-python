@@ -489,6 +489,136 @@ class Node:
                 onResponse = self.onAckNak
             return self._sendAdmin(p, onResponse=onResponse)
 
+    def configure(self,file):
+        with open(args.configure[0], encoding="utf8") as file:
+            configuration = yaml.safe_load(file)
+            closeNow = True
+
+            interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
+
+            if "owner" in configuration:
+                # Validate owner name before setting
+                owner_name = str(configuration["owner"]).strip()
+                if not owner_name:
+                    meshtastic.util.our_exit("ERROR: Long Name cannot be empty or contain only whitespace characters")
+                print(f"Setting device owner to {configuration['owner']}")
+                waitForAckNak = True
+                interface.getNode(args.dest, False, **getNode_kwargs).setOwner(configuration["owner"])
+                time.sleep(0.5)
+
+            if "owner_short" in configuration:
+                # Validate owner short name before setting
+                owner_short_name = str(configuration["owner_short"]).strip()
+                if not owner_short_name:
+                    meshtastic.util.our_exit("ERROR: Short Name cannot be empty or contain only whitespace characters")
+                print(
+                    f"Setting device owner short to {configuration['owner_short']}"
+                )
+                waitForAckNak = True
+                interface.getNode(args.dest, False, **getNode_kwargs).setOwner(
+                    long_name=None, short_name=configuration["owner_short"]
+                )
+                time.sleep(0.5)
+
+            if "ownerShort" in configuration:
+                # Validate owner short name before setting
+                owner_short_name = str(configuration["ownerShort"]).strip()
+                if not owner_short_name:
+                    meshtastic.util.our_exit("ERROR: Short Name cannot be empty or contain only whitespace characters")
+                print(
+                    f"Setting device owner short to {configuration['ownerShort']}"
+                )
+                waitForAckNak = True
+                interface.getNode(args.dest, False, **getNode_kwargs).setOwner(
+                    long_name=None, short_name=configuration["ownerShort"]
+                )
+                time.sleep(0.5)
+
+            if "channel_url" in configuration:
+                print("Setting channel url to", configuration["channel_url"])
+                interface.getNode(args.dest, **getNode_kwargs).setURL(configuration["channel_url"])
+                time.sleep(0.5)
+
+            if "channelUrl" in configuration:
+                print("Setting channel url to", configuration["channelUrl"])
+                interface.getNode(args.dest, **getNode_kwargs).setURL(configuration["channelUrl"])
+                time.sleep(0.5)
+
+            if "canned_messages" in configuration:
+                print("Setting canned message messages to", configuration["canned_messages"])
+                interface.getNode(args.dest, **getNode_kwargs).set_canned_message(configuration["canned_messages"])
+                time.sleep(0.5)
+
+            if "ringtone" in configuration:
+                print("Setting ringtone to", configuration["ringtone"])
+                interface.getNode(args.dest, **getNode_kwargs).set_ringtone(configuration["ringtone"])
+                time.sleep(0.5)
+
+            if "location" in configuration:
+                alt = 0
+                lat = 0.0
+                lon = 0.0
+                localConfig = interface.localNode.localConfig
+
+                if "alt" in configuration["location"]:
+                    alt = int(configuration["location"]["alt"] or 0)
+                    print(f"Fixing altitude at {alt} meters")
+                if "lat" in configuration["location"]:
+                    lat = float(configuration["location"]["lat"] or 0)
+                    print(f"Fixing latitude at {lat} degrees")
+                if "lon" in configuration["location"]:
+                    lon = float(configuration["location"]["lon"] or 0)
+                    print(f"Fixing longitude at {lon} degrees")
+                print("Setting device position")
+                interface.localNode.setFixedPosition(lat, lon, alt)
+                time.sleep(0.5)
+
+            if "config" in configuration:
+                localConfig = interface.getNode(args.dest, **getNode_kwargs).localConfig
+                for section in configuration["config"]:
+                    traverseConfig(
+                        section, configuration["config"][section], localConfig
+                    )
+                    interface.getNode(args.dest, **getNode_kwargs).writeConfig(
+                        meshtastic.util.camel_to_snake(section)
+                    )
+                    time.sleep(0.5)
+
+            if "module_config" in configuration:
+                moduleConfig = interface.getNode(args.dest, **getNode_kwargs).moduleConfig
+                for section in configuration["module_config"]:
+                    traverseConfig(
+                        section,
+                        configuration["module_config"][section],
+                        moduleConfig,
+                    )
+                    interface.getNode(args.dest, **getNode_kwargs).writeConfig(
+                        meshtastic.util.camel_to_snake(section)
+                    )
+                    time.sleep(0.5)
+
+            interface.getNode(args.dest, False, **getNode_kwargs).commitSettingsTransaction()
+            print("Writing modified configuration to device")
+
+    def export_config(self,interface,file):
+        if args.dest != BROADCAST_ADDR:
+            print("Exporting configuration of remote nodes is not supported.")
+            return
+
+        closeNow = True
+        config_txt = export_config(interface)
+
+        if args.export_config == "-":
+            # Output to stdout (preserves legacy use of `> file.yaml`)
+            print(config_txt)
+        else:
+            try:
+                with open(args.export_config, "w", encoding="utf-8") as f:
+                    f.write(config_txt)
+                print(f"Exported configuration to {args.export_config}")
+            except Exception as e:
+                meshtastic.util.our_exit(f"ERROR: Failed to write config file: {e}")
+
     def onResponseRequestCannedMessagePluginMessageMessages(self, p):
         """Handle the response packet for requesting canned message plugin message part 1"""
         logging.debug(f"onResponseRequestCannedMessagePluginMessageMessages() p:{p}")

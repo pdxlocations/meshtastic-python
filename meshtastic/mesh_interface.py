@@ -1098,6 +1098,23 @@ class MeshInterface:  # pylint: disable=R0902
             return node.get_ringtone()
         return None
 
+
+    def configure(self, filename: str):
+        """Configure the device with a config file"""
+        node = self.localNode
+        if node is not None:
+            return node.configure(filename)
+        return None
+
+
+    def exportConfig(self, filename: str):
+        """Export the current config to a file"""
+        node = self.localNode
+        if node is not None:
+            return node.export_config(filename)
+        return None
+
+
     def _waitConnected(self, timeout=30.0):
         """Block until the initial node db download is complete, or timeout
         and raise an exception"""
