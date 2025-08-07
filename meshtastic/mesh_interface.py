@@ -1099,19 +1099,19 @@ class MeshInterface:  # pylint: disable=R0902
         return None
 
 
-    def configure(self, filename: str):
+    def nodeConfigure(self, filename: str, *kwargs, **getNode_kwargs):
         """Configure the device with a config file"""
         node = self.localNode
         if node is not None:
-            return node.configure(filename)
+            return node.node_configure(filename, *kwargs, **getNode_kwargs)
         return None
 
 
-    def exportConfig(self, filename: str):
+    def nodeExportConfig(self, filename: str, **getNode_kwargs):
         """Export the current config to a file"""
         node = self.localNode
         if node is not None:
-            return node.export_config(filename)
+            return node.node_export_config(filename, **getNode_kwargs)
         return None
 
 

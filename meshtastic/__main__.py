@@ -26,9 +26,9 @@ try:
 except ImportError as e:
     pyqrcode = None
 
-import yaml
 from google.protobuf.json_format import MessageToDict
 from pubsub import pub  # type: ignore[import-untyped]
+import yaml
 
 try:
     import meshtastic.test
@@ -662,7 +662,7 @@ def onConnected(interface):
                 printConfig(node.moduleConfig)
 
         if args.configure:
-            configure(interface, args.configure[0])
+            interface.node_configure(args.configure, **getNode_kwargs)
             # with open(args.configure[0], encoding="utf8") as file:
             #     configuration = yaml.safe_load(file)
             #     closeNow = True
@@ -774,7 +774,12 @@ def onConnected(interface):
             #     print("Writing modified configuration to device")
 
         if args.export_config:
-            config = export_config(interface, args.export_config)
+            if args.dest != BROADCAST_ADDR:
+                print("Exporting configuration of remote nodes is not supported.")
+                return
+
+            interface.node_export_configure(args.export_config, **getNode_kwargs)
+
             # if args.dest != BROADCAST_ADDR:
             #     print("Exporting configuration of remote nodes is not supported.")
             #     return
